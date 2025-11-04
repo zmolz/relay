@@ -65,6 +65,7 @@ jobs:
             echo "Go files not properly formatted:"
             echo "$unformatted"
             exit 1
+          fi
 
       # ---- 11. Install Wails CLI ----
       - name: Install Wails CLI
