@@ -1,0 +1,60 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main] # adjust to your default branches
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ---- 1. Checkout code ----
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # ---- 2. Setup Go ----
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.25
+
+      # ---- 3. Setup Node.js ----
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      # ---- 4. Install dependencies ----
+      - name: Install Go dependencies
+        run: go mod tidy
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      # ---- 5. Run Go linters and format check ----
+      - name: Install golangci-lint
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s latest
+
+      - name: Run golangci-lint
+        run: golangci-lint run ./...
+
+      - name: Check go fmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "Go files not properly formatted:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      # ---- 6. Run frontend lint and format check ----
+      - name: ESLint check
+        run: npx eslint 'frontend/src/**/*.{js,ts,jsx,tsx}'
+
+      - name: Prettier check
+        run: npx prettier --check .
+
+      # ---- 7. Wails build ----
+      - name: Build Wails app
+        run: wails build
