@@ -8,12 +8,15 @@ jobs:
   lint-build:
     runs-on: macos-latest
 
+    env:
+      GOPATH: ${{ runner.temp }}/go # Temporary GOPATH for caching
+
     steps:
-      # ---- 1. Checkout repository code ----
+      # ---- 1. Checkout repository ----
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # =========== FE CHECKS ============
+      # =========== FRONTEND ============
 
       # ---- 2. Setup Node.js ----
       - name: Setup Node.js
@@ -21,42 +24,67 @@ jobs:
         with:
           node-version: 22
 
-      # ---- 3. Install frontend dependencies ----
+      # ---- 3. Cache Node modules ----
+      - name: Cache Node modules
+        uses: actions/cache@v3
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+
+      # ---- 4. Install frontend dependencies ----
       - name: Install frontend dependencies
         working-directory: frontend
-        run: npm ci # Clean install from package-lock.json
+        run: npm ci
 
-      # ---- 4. Format frontend code ----
+      # ---- 5. Format frontend code ----
       - name: Prettier check
         working-directory: frontend
         run: npx prettier --check .
 
-      # ---- 5. Build frontend ----
+      # ---- 6. Build frontend ----
       - name: Build frontend
         working-directory: frontend
         run: npm run build
 
-      # =========== BE CHECKS ============
+      # =========== BACKEND ============
 
-      # ---- 6. Setup Go ----
+      # ---- 7. Setup Go ----
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: 1.25
 
-      # ---- 7. Install Go dependencies ----
+      # ---- 8. Cache Go modules ----
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ env.GOPATH }}/pkg/mod
+            ${{ env.GOPATH }}/bin
+            ${{ env.GOPATH }}/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
+
+      # ---- 9. Install Go dependencies ----
       - name: Install Go dependencies
         run: go mod tidy
 
-      # ---- 8. Install golangci-lint ----
+      # ---- 10. Install Wails CLI (cached) ----
+      - name: Install Wails CLI
+        run: |
+          if [ ! -f "${GOPATH}/bin/wails" ]; then
+            go install github.com/wailsapp/wails/v2/cmd/wails@latest
+          fi
+          echo "${GOPATH}/bin" >> $GITHUB_PATH
+
+      # ---- 11. Install golangci-lint ----
       - name: Install golangci-lint
         run: brew install golangci-lint
 
-      # ---- 9. Run Go linters ----
+      # ---- 12. Run Go linters ----
       - name: Run golangci-lint
         run: golangci-lint run ./...
 
-      # ---- 10. Check Go formatting ----
+      # ---- 13. Check Go formatting ----
       - name: Check go fmt
         run: |
           unformatted=$(gofmt -l .)
@@ -64,8 +92,7 @@ jobs:
             echo "Go files not properly formatted:"
             echo "$unformatted"
             exit 1
-          fi
 
-      # ---- 11. Build Wails app ----
+      # ---- 14. Build Wails app ----
       - name: Build Wails app
         run: wails build
