@@ -2,46 +2,66 @@ name: PR Checks
 
 on:
   pull_request:
-    branches: [main] # adjust to your default branches
+    branches: [main]
 
 jobs:
-  lint-and-build:
-    runs-on: ubuntu-latest
+  lint-build:
+    runs-on: macos-latest
 
     steps:
-      # ---- 1. Checkout code ----
+      # ---- 1. Checkout repository code ----
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # ---- 2. Setup Go ----
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.25
+      # =========== FE CHECKS ============
 
-      # ---- 3. Setup Node.js ----
+      # ---- 2. Setup Node.js ----
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 22
 
-      # ---- 4. Install dependencies ----
+      # ---- 3. Install frontend dependencies ----
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci # Clean install from package-lock.json
+
+      # ---- 4. Lint frontend code ----
+      - name: ESLint check
+        working-directory: frontend
+        run: npx eslint 'src/**/*.{js,ts,jsx,tsx}'
+
+      # ---- 5. Format frontend code ----
+      - name: Prettier check
+        working-directory: frontend
+        run: npx prettier --check .
+
+      # ---- 6. Build frontend ----
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      # =========== BE CHECKS ============
+
+      # ---- 7. Setup Go ----
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.25
+
+      # ---- 8. Install Go dependencies ----
       - name: Install Go dependencies
         run: go mod tidy
 
-      - name: Install Frontend dependencies
-        working-directory: frontend
-        run: npm ci
-
-      # ---- 5. Run Go linters and format check ----
+      # ---- 9. Install golangci-lint ----
       - name: Install golangci-lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s latest
-          echo "$PWD/bin" >> $GITHUB_PATH
+        run: brew install golangci-lint
 
+      # ---- 10. Run Go linters ----
       - name: Run golangci-lint
         run: golangci-lint run ./...
 
+      # ---- 11. Check Go formatting ----
       - name: Check go fmt
         run: |
           unformatted=$(gofmt -l .)
@@ -51,13 +71,6 @@ jobs:
             exit 1
           fi
 
-      # ---- 6. Run frontend lint and format check ----
-      - name: ESLint check
-        run: npx eslint 'frontend/src/**/*.{js,ts,jsx,tsx}'
-
-      - name: Prettier check
-        run: npx prettier --check .
-
-      # ---- 7. Wails build ----
+      # ---- 12. Build Wails app ----
       - name: Build Wails app
         run: wails build
