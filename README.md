@@ -1,5 +1,7 @@
 # README
 
+Testing GH workflow
+
 ## About
 
 This is the official Wails Svelte-TS template.
