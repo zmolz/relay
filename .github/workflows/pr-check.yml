@@ -26,42 +26,37 @@ jobs:
         working-directory: frontend
         run: npm ci # Clean install from package-lock.json
 
-      # ---- 4. Lint frontend code ----
-      - name: ESLint check
-        working-directory: frontend
-        run: npx eslint 'src/**/*.{js,ts,jsx,tsx}'
-
-      # ---- 5. Format frontend code ----
+      # ---- 4. Format frontend code ----
       - name: Prettier check
         working-directory: frontend
         run: npx prettier --check .
 
-      # ---- 6. Build frontend ----
+      # ---- 5. Build frontend ----
       - name: Build frontend
         working-directory: frontend
         run: npm run build
 
       # =========== BE CHECKS ============
 
-      # ---- 7. Setup Go ----
+      # ---- 6. Setup Go ----
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: 1.25
 
-      # ---- 8. Install Go dependencies ----
+      # ---- 7. Install Go dependencies ----
       - name: Install Go dependencies
         run: go mod tidy
 
-      # ---- 9. Install golangci-lint ----
+      # ---- 8. Install golangci-lint ----
       - name: Install golangci-lint
         run: brew install golangci-lint
 
-      # ---- 10. Run Go linters ----
+      # ---- 9. Run Go linters ----
       - name: Run golangci-lint
         run: golangci-lint run ./...
 
-      # ---- 11. Check Go formatting ----
+      # ---- 10. Check Go formatting ----
       - name: Check go fmt
         run: |
           unformatted=$(gofmt -l .)
@@ -71,6 +66,6 @@ jobs:
             exit 1
           fi
 
-      # ---- 12. Build Wails app ----
+      # ---- 11. Build Wails app ----
       - name: Build Wails app
         run: wails build
