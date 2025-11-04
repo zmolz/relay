@@ -35,7 +35,9 @@ jobs:
 
       # ---- 5. Run Go linters and format check ----
       - name: Install golangci-lint
-        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s latest
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s latest
+          echo "$PWD/bin" >> $GITHUB_PATH
 
       - name: Run golangci-lint
         run: golangci-lint run ./...
