@@ -9,9 +9,6 @@ jobs:
   lint-build:
     runs-on: macos-latest
 
-    env:
-      GOPATH: ${{ runner.temp }}/go # temporary GOPATH for Wails install
-
     steps:
       # ---- 1. Checkout repository ----
       - name: Checkout repository
