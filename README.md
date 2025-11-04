@@ -1,6 +1,6 @@
 # README
 
-Testing GH workflow
+Testing GH workflow 2
 
 ## About
 
