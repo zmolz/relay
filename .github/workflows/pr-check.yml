@@ -20,13 +20,12 @@ jobs:
         with:
           node-version: 22
 
-      - name: Cache Node modules
+      - name: Cache frontend Node modules
         uses: actions/cache@v4
         with:
           path: frontend/node_modules
-          key: node-modules-${{ hashFiles('frontend/package-lock.json') }}
-          restore-keys: |
-            node-modules-
+          key: frontend-node-modules-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: frontend-node-modules-
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -68,8 +67,7 @@ jobs:
             ~/go/pkg/mod
             ~/go/bin
           key: go-modules-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            go-modules-
+          restore-keys: go-modules-
 
       - name: Install Go dependencies
         run: go mod tidy
@@ -103,6 +101,28 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Cache Node for Wails
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: macos-node-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: macos-node-
+
+      - name: Cache Go modules for Wails
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/go/bin
+          key: go-modules-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-modules-
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
 
       - name: Build Wails app
         uses: dAppServer/wails-build-action@v1
