@@ -20,6 +20,14 @@ jobs:
         with:
           node-version: 22
 
+      - name: Cache Node modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: node-modules-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            node-modules-
+
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
@@ -53,6 +61,16 @@ jobs:
         with:
           go-version: 1.25
 
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/go/bin
+          key: go-modules-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            go-modules-
+
       - name: Install Go dependencies
         run: go mod tidy
 
@@ -60,7 +78,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-dist
-          path: frontend/dist 
+          path: frontend/dist
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v8
@@ -80,14 +98,14 @@ jobs:
   wails:
     name: Wails Build
     runs-on: macos-latest
-    needs: [frontend, backend] # Wait for both jobs to finish successfully
+    needs: [frontend, backend]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Build Wails app
-        uses: dAppServer/wails-build-action@v1   # or whatever latest tag
+        uses: dAppServer/wails-build-action@v1
         with:
           go-version: 1.25
           node-version: 22
