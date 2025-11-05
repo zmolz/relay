@@ -36,6 +36,7 @@ jobs:
   backend:
     name: Backend Checks
     runs-on: macos-latest
+    needs: [frontend]
 
     steps:
       - name: Checkout repository
@@ -49,11 +50,11 @@ jobs:
       - name: Install Go dependencies
         run: go mod tidy
 
-      - name: Install golangci-lint
-        run: brew install golangci-lint
-
-      - name: Run Go linters
-        run: golangci-lint run ./...
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.6.1
+          args: --config .golangci.yml
 
       - name: Check go fmt
         run: |
