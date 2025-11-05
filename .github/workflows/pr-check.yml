@@ -6,58 +6,55 @@ on:
   workflow_dispatch:
 
 jobs:
-  lint-build:
+  # ========== FRONTEND JOB ==========
+  frontend:
+    name: Frontend Checks
     runs-on: macos-latest
 
     steps:
-      # ---- 1. Checkout repository ----
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # =========== FRONTEND ============
-
-      # ---- 2. Setup Node.js ----
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 22
 
-      # ---- 3. Install frontend dependencies ----
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
 
-      # ---- 4. Format frontend code ----
       - name: Prettier check
         working-directory: frontend
         run: npx prettier --check .
 
-      # ---- 5. Build frontend ----
       - name: Build frontend
         working-directory: frontend
         run: npm run build
 
-      # =========== BACKEND ============
+  # ========== BACKEND JOB ==========
+  backend:
+    name: Backend Checks
+    runs-on: macos-latest
 
-      # ---- 6. Setup Go ----
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: 1.25
 
-      # ---- 7. Install Go dependencies ----
       - name: Install Go dependencies
         run: go mod tidy
 
-      # ---- 8. Install golangci-lint ----
       - name: Install golangci-lint
         run: brew install golangci-lint
 
-      # ---- 9. Run Go linters ----
-      - name: Run golangci-lint
+      - name: Run Go linters
         run: golangci-lint run ./...
 
-      # ---- 10. Check Go formatting ----
       - name: Check go fmt
         run: |
           unformatted=$(gofmt -l .)
@@ -67,12 +64,23 @@ jobs:
             exit 1
           fi
 
-      # ---- 11. Install Wails CLI ----
-      - name: Install Wails CLI
-        run: |
-          go install github.com/wailsapp/wails/v2/cmd/wails@latest
-          echo "${GOPATH}/bin" >> $GITHUB_PATH
+  # ========== WAILS JOB ==========
+  wails:
+    name: Wails Build
+    runs-on: macos-latest
+    needs: [frontend, backend] # Wait for both jobs to finish successfully
 
-      # ---- 12. Build Wails app ----
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.25
+
+      - name: Install Wails CLI
+        run: brew install wails/tap/wails
+
       - name: Build Wails app
         run: wails build
